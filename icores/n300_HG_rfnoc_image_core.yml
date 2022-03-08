@@ -28,6 +28,22 @@ stream_endpoints:
     ctrl: False                     # Endpoint passes control traffic
     data: True                      # Endpoint passes data traffic
     buff_size: 4096                 # Ingress buffer size for data
+  ep4:                       # Stream endpoint name
+    ctrl: False                     # Endpoint passes control traffic
+    data: True                      # Endpoint passes data traffic
+    buff_size: 4096                 # Ingress buffer size for data
+  ep5:                       # Stream endpoint name
+    ctrl: False                     # Endpoint passes control traffic
+    data: True                      # Endpoint passes data traffic
+    buff_size: 4096                 # Ingress buffer size for data
+  ep6:                       # Stream endpoint name
+    ctrl: False                     # Endpoint passes control traffic
+    data: True                      # Endpoint passes data traffic
+    buff_size: 4096                 # Ingress buffer size for data
+  ep7:                       # Stream endpoint name
+    ctrl: False                     # Endpoint passes control traffic
+    data: True                      # Endpoint passes data traffic
+    buff_size: 4096                 # Ingress buffer size for data
 
 # A list of all NoC blocks in design
 # ----------------------------------
@@ -42,6 +58,21 @@ noc_blocks:
       NUM_PORTS: 2
   radio0:
     block_desc: 'radio_2x64.yml'
+  fft0:
+    block_desc: 'fft_1x64.yml'
+  fir0:
+    block_desc: 'fir_filter.yml'
+    parameters:
+      NUM_PORTS: 1
+      BLANK_OUTPUT: 1
+  siggen0:
+    block_desc: 'siggen.yml'
+    parameters:
+      NUM_PORTS: 1
+  window0:
+    block_desc: 'window.yml'
+    parameters:
+      NUM_PORTS: 1
   replay0:
     block_desc: 'replay.yml'
     parameters:
@@ -56,18 +87,27 @@ noc_blocks:
 #         - dstblk = Destination block to connect
 #         - dstport = Port on the destination block to connect
 connections:
-  - { srcblk: ep0,    srcport: out0,  dstblk: duc0,   dstport: in_0 }
-  - { srcblk: duc0,   srcport: out_0, dstblk: radio0, dstport: in_0 }
-  - { srcblk: radio0, srcport: out_0, dstblk: ddc0,   dstport: in_0 }
-  - { srcblk: ddc0,   srcport: out_0, dstblk: ep0,    dstport: in0  }
-  - { srcblk: ep1,    srcport: out0,  dstblk: duc0,   dstport: in_1 }
-  - { srcblk: duc0,   srcport: out_1, dstblk: radio0, dstport: in_1 }
-  - { srcblk: radio0, srcport: out_1, dstblk: ddc0,   dstport: in_1 }
-  - { srcblk: ddc0,   srcport: out_1, dstblk: ep1,    dstport: in0  }
+  - { srcblk: ep0,     srcport: out0,  dstblk: duc0,    dstport: in_0 }
+  - { srcblk: duc0,    srcport: out_0, dstblk: radio0,  dstport: in_0 }
+  - { srcblk: radio0,  srcport: out_0, dstblk: ddc0,    dstport: in_0 }
+  - { srcblk: ddc0,    srcport: out_0, dstblk: ep0,     dstport: in0  }
+  - { srcblk: ep1,     srcport: out0,  dstblk: duc0,    dstport: in_1 }
+  - { srcblk: duc0,    srcport: out_1, dstblk: radio0,  dstport: in_1 }
+  - { srcblk: radio0,  srcport: out_1, dstblk: ddc0,    dstport: in_1 }
+  - { srcblk: ddc0,    srcport: out_1, dstblk: ep1,     dstport: in0  }
   - { srcblk: ep2,     srcport: out0,  dstblk: replay0, dstport: in_0 }
   - { srcblk: replay0, srcport: out_0, dstblk: ep2,     dstport: in0  }
   - { srcblk: ep3,     srcport: out0,  dstblk: replay0, dstport: in_1 }
   - { srcblk: replay0, srcport: out_1, dstblk: ep3,     dstport: in0  }
+  # Custom block connections
+  - { srcblk: siggen0, srcport: out_0, dstblk: ep4,     dstport: in0  }
+  - { srcblk: ep5,     srcport: out0,  dstblk: fir0,    dstport: in_0 }
+  - { srcblk: fir0,    srcport: out_0, dstblk: ep5,     dstport: in0  }
+  - { srcblk: ep6,     srcport: out0,  dstblk: window0, dstport: in_0 }
+  - { srcblk: window0, srcport: out_0, dstblk: ep6,     dstport: in0  }
+  - { srcblk: ep7,     srcport: out0,  dstblk: fft0,    dstport: in_0 }
+  - { srcblk: fft0,    srcport: out_0, dstblk: ep7,     dstport: in0  }
+  # BSP Connections
   - { srcblk: radio0, srcport: ctrl_port, dstblk: _device_, dstport: ctrlport_radio0 }
   - { srcblk: replay0, srcport: axi_ram, dstblk: _device_, dstport: dram }
   - { srcblk: _device_, srcport: x300_radio0, dstblk: radio0, dstport: x300_radio }
@@ -81,7 +121,11 @@ connections:
 #         - dstblk  = Destination block to connect
 #         - dstport = Clock domain on the destination block to connect
 clk_domains:
-  - { srcblk: _device_, srcport: radio,      dstblk: radio0, dstport: radio }
-  - { srcblk: _device_, srcport: rfnoc_chdr, dstblk: ddc0,   dstport: ce    }
-  - { srcblk: _device_, srcport: rfnoc_chdr, dstblk: duc0,   dstport: ce    }
+  - { srcblk: _device_, srcport: radio,      dstblk: radio0,  dstport: radio }
+  - { srcblk: _device_, srcport: rfnoc_chdr, dstblk: ddc0,    dstport: ce    }
+  - { srcblk: _device_, srcport: rfnoc_chdr, dstblk: duc0,    dstport: ce    }
   - { srcblk: _device_, srcport: dram,       dstblk: replay0, dstport: mem  }
+  - { srcblk: _device_, srcport: rfnoc_chdr, dstblk: fir0,    dstport: ce    }
+  - { srcblk: _device_, srcport: rfnoc_chdr, dstblk: siggen0, dstport: ce    }
+  - { srcblk: _device_, srcport: rfnoc_chdr, dstblk: window0, dstport: ce    }
+  - { srcblk: _device_, srcport: rfnoc_chdr, dstblk: fft0,    dstport: ce    }

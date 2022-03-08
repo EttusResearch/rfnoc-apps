@@ -21,12 +21,29 @@ stream_endpoints:
     ctrl: False                     # Endpoint passes control traffic
     data: True                      # Endpoint passes data traffic
     buff_size: 16384                # Ingress buffer size for data
+  ep2:                       # Stream endpoint name
+    ctrl: False                     # Endpoint passes control traffic
+    data: True                      # Endpoint passes data traffic
+    buff_size: 32                   # Ingress buffer size for data
+  ep3:                       # Stream endpoint name
+    ctrl: False                     # Endpoint passes control traffic
+    data: True                      # Endpoint passes data traffic
+    buff_size: 32                   # Ingress buffer size for data
 
 # A list of all NoC blocks in design
 # ----------------------------------
 noc_blocks:
   radio0:                            # NoC block name
     block_desc: 'radio_2x64.yml'     # Block device descriptor
+  fir0:
+    block_desc: 'fir_filter.yml'
+    parameters:
+      NUM_PORTS: 1
+      BLANK_OUTPUT: 1
+  siggen0:
+    block_desc: 'siggen.yml'
+    parameters:
+      NUM_PORTS: 1
 
 # A list of all static connections in design
 # ------------------------------------------
@@ -36,10 +53,15 @@ noc_blocks:
 #         - dstblk  = Destination block to connect
 #         - dstport = Port on the destination block to connect
 connections:
-  - { srcblk: ep0,    srcport: out0,  dstblk: radio0, dstport: in_0 }
-  - { srcblk: ep1,    srcport: out0,  dstblk: radio0, dstport: in_1 }
-  - { srcblk: radio0, srcport: out_0, dstblk: ep0,    dstport: in0  }
-  - { srcblk: radio0, srcport: out_1, dstblk: ep1,    dstport: in0  }
+  - { srcblk: ep0,     srcport: out0,  dstblk: radio0, dstport: in_0 }
+  - { srcblk: ep1,     srcport: out0,  dstblk: radio0, dstport: in_1 }
+  - { srcblk: radio0,  srcport: out_0, dstblk: ep0,    dstport: in0  }
+  - { srcblk: radio0,  srcport: out_1, dstblk: ep1,    dstport: in0  }
+  # Custom block connections
+  - { srcblk: siggen0, srcport: out_0, dstblk: ep2,    dstport: in0  }
+  - { srcblk: ep3,     srcport: out0,  dstblk: fir0,   dstport: in_0 }
+  - { srcblk: fir0,    srcport: out_0, dstblk: ep3,    dstport: in0  }
+  # BSP Connections
   - { srcblk: radio0, srcport: ctrl_port, dstblk: _device_, dstport: ctrlport_radio }
   - { srcblk: _device_, srcport: x300_radio, dstblk: radio0, dstport: x300_radio }
   - { srcblk: _device_, srcport: time_keeper, dstblk: radio0, dstport: time_keeper }
@@ -52,4 +74,6 @@ connections:
 #         - dstblk  = Destination block to connect
 #         - dstport = Clock domain on the destination block to connect
 clk_domains:
-  - { srcblk: _device_, srcport: radio, dstblk: radio0, dstport: radio }
+  - { srcblk: _device_, srcport: radio,       dstblk: radio0,  dstport: radio }
+  - { srcblk: _device_, srcport: rfnoc_chdr,  dstblk: fir0,    dstport: ce    }
+  - { srcblk: _device_, srcport: rfnoc_chdr,  dstblk: siggen0, dstport: ce    }
